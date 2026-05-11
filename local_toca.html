@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>База данных: Джамал и ко</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Roboto+Mono:wght@400;700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #0a0a0a;
+            color: #00ff00;
+            font-family: 'Roboto Mono', monospace;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            text-align: center;
+        }
+
+        /* Эффект старого монитора / сканлайны */
+        body::after {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 2;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+        }
+
+        .container {
+            z-index: 3;
+            max-width: 800px;
+            padding: 20px;
+        }
+
+        h1 {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 1.5rem;
+            color: #ff00ff;
+            text-shadow: 2px 2px 0px #000, -1px -1px 0 #00ffff;
+            margin-bottom: 40px;
+            line-height: 1.5;
+        }
+
+        #quote-display {
+            font-size: 1.8rem;
+            font-weight: 700;
+            min-height: 120px; /* Чтобы кнопка не прыгала */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 40px;
+            padding: 20px;
+            border: 2px dashed #333;
+            border-radius: 10px;
+            background-color: rgba(0, 255, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .loading {
+            animation: blink 0.5s infinite;
+            color: #ffff00;
+        }
+
+        button {
+            font-family: 'Press Start 2P', cursive;
+            background-color: transparent;
+            color: #00ffff;
+            border: 3px solid #00ffff;
+            padding: 15px 30px;
+            font-size: 1rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.2s;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
+        }
+
+        button:hover {
+            background-color: #00ffff;
+            color: #000;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.6);
+        }
+
+        button:active {
+            transform: translateY(4px);
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        /* Мелкий текст внизу */
+        .footer {
+            margin-top: 50px;
+            font-size: 0.8rem;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Генератор случайной хуйни <br>(версия для своих)</h1>
+        
+        <div id="quote-display">
+            Нажми кнопку, чтобы получить мудрость дня.
+        </div>
+
+        <button id="generate-btn" onclick="generateQuote()">Узнать судьбу</button>
+
+        <div class="footer">
+            Система инициализирована. Ожидание запроса...
+        </div>
+    </div>
+
+    <script>
+        // Тот самый словарь
+        const quotes = [
+            "«Давайте присядем»",
+            "«Шкода твою подружку, типа обиделась, да?»",
+            "«Вы где?» - «На 9 в центре, ты гонишь?»",
+            "«НПС»",
+            "«За углом открылась стрипуха.. ну я там не работаю! Я вам серьёзно говорю, отвечаю!»",
+            "«А де він є?!»",
+            "«Де він живе?»",
+            "«Куда идём? Прямо»",
+            "«За Джамалом»",
+            "«Він не живе - він гуляє»",
+            "«Нормальные ТикТок? А? Я не місцева, я не місцева 🙅🏼‍♀️»",
+            "«Виставляйте! Виставили? Виставляйте!»",
+            "«Фоткаешь? Да, видео снимаю»",
+            "«Добрый день, хостел? Джамал»",
+            "«Я не буду садиться за программы»",
+            "«Ля, тип тупо съебался»",
+            "«Внатуре съебался. Сорян»",
+            "«Сукаблять 🤌🏻»",
+            "«Джамаааал»",
+            "«Полароид?»",
+            "«Як буде по-українськи..? Ай похуй»",
+            "«Может отойти? Я ей доверяю»",
+            "«Ми з вами, він з ними, він за мной, ми за ним»",
+            "«Жизнь одна нахуй, не слухайте мене… у меня квартира, 3 мотоцикла, не слушайте»",
+            "«Я не знаю звідки я.. я стільки міст поміняв»",
+            "«Отказано»",
+            "«Дохуя стерильный»",
+            "«КАЙФ»",
+            "«Зато я оцень класивый»",
+            "«Коли вїбали лімона на сухую. Сіжечку»",
+            "«Шо по ебалу?»",
+            "«А тебе.. зубы, выбили?»",
+            "«Там, за кутиком»",
+            "«Я ебу че он сюда пришёл»",
+            "«Джамал, Ева, Валентин - Тимофей 🤝»",
+            "«5 секунд, 5 секунд..»",
+            "«Джамал, не думай ничего пыздыты, магаз в 9 открывается»",
+            "«Карета-Брычка»",
+            "«Нормально нормально.. та похуй 🤙»",
+            "«Тебе дать? Нене.. а снюс?»",
+            "«Хочу кушать.. будешь? Ты уже отгрыз..(((»",
+            "«Пароль знаешь»",
+            "«Нахуй ту романтику.. внатуре!»",
+            "«Им деньги нужны? А нам шо не нужны?»",
+            "«Индусы понаехали..Никого не пропустил»",
+            "«Этот чел сделал нас невидимыми»",
+            "«Прячь цепочку, прячь браслет»",
+            "«Эти аж туда 👈🏻 съебались 😂»",
+            "«Далеко не ховай»",
+            "«Метку покажи»",
+            "«И снова с вами»",
+            "«А тебе по приколу сидеть в телефоне, коли я сиджу поруч? ТА ШУТКА.. я больше так не пошучу!!»",
+            "«В этом блядушнике! ЗАПИСЫВАЙ БЛЯТЬ!»",
+            "«Они не будут читать твоим голосом.. ТА ПОХУЙ!»",
+            "«У ТЕБЯ ОСТАЛСЯ ОДИН ШАНС.. КРУТИТЕ БАРАБАН.. У ТЕБЯ ОСТАЛОСЬ ДВАААА ШШАААНСАААА»",
+            "«Блять, я потерялся»",
+            "«Ебать, ахуенно в парк сходили.. го щас? ГО!»",
+            "«Записуй записуй, та я заебуюся»",
+            "«Чи бороду себе отрастить?»",
+            "«Че по телефону»",
+            "«Ебал рыгал дремал»",
+            "«Ты голодний? 5.500 😐»",
+            "«Ушёл в себя! Дал дал назад!»",
+            "«Алло, скорая? Шо у вас произошло? Тип ушёл в себя»",
+            "«Я болею за тебя - выздоравливай»"
+        ];
+
+        const display = document.getElementById('quote-display');
+        const btn = document.getElementById('generate-btn');
+
+        // Массив шуточных фраз "загрузки"
+        const loadingPhrases = [
+            "Ищем Джамала...",
+            "Проверяем метку...",
+            "Прячем цепочку...",
+            "Крутим барабан...",
+            "Уходим в себя..."
+        ];
+
+        function generateQuote() {
+            // Отключаем кнопку, чтобы не спамили
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+
+            // Случайная фраза загрузки
+            const randomLoad = loadingPhrases[Math.floor(Math.random() * loadingPhrases.length)];
+            
+            display.classList.add('loading');
+            display.innerText = randomLoad;
+
+            // Имитация "вычисления" - через 1.5 секунды выдаем цитату
+            setTimeout(() => {
+                const randomIndex = Math.floor(Math.random() * quotes.length);
+                display.classList.remove('loading');
+                display.innerText = quotes[randomIndex];
+                
+                // Включаем кнопку обратно
+                btn.disabled = false;
+                btn.style.opacity = '1';
+            }, 1500);
+        }
+    </script>
+</body>
+</html>
